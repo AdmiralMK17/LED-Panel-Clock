@@ -96,7 +96,10 @@ void loop()
       utf8rus(ForInfo).toCharArray(buf, 256);
       P.displayZoneText(ZONE_WEATHER, buf, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_DOWN);
       cycle++;
+      /*------Log to Serial------*/
       TerminalLogWeather();
+      /*------Log to Serial------*/
+      Brightnes();
       break;
     case 1:
       ForInfo = "Ветер:" + String(weather_WindSpeed) + "}]p";
