@@ -5,6 +5,7 @@ void setup()
   StartSetup();
 }
 
+/*
 String utf8rus(String source)
 {
   int i, k;
@@ -57,6 +58,7 @@ String utf8rus(String source)
   }
   return target;
 }
+*/
 
 void loop()
 {
@@ -98,6 +100,7 @@ void loop()
       cycle++;
       /*------Log to Serial------*/
       TerminalLogWeather();
+      getWeatherData();
       /*------Log to Serial------*/
       Brightnes();
       break;

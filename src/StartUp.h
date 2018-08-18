@@ -475,11 +475,13 @@ void getWeatherData()
         if (!root.success())
           return;
         weather_OK = true;
+        Serial.println("weather_OK weather = " + weather_OK);
 
         weather_DescripEn = root["weather"][0]["main"].as<String>();
         weather_ID = root["weather"][0]["id"];
         weather_DescripRu = root["weather"][0]["description"].as<String>();
         weather_DescripRu.toLowerCase();
+        Serial.println("root['weather'][0]['main'] = " + weather_DescripEn);
 
         weather_Sity = root["name"].as<String>();
         weather_Country = root["sys"]["country"].as<String>();
@@ -533,6 +535,7 @@ void getWeatherData()
         if (!root.success())
           return;
         weather_OK = true;
+        Serial.println("weather_OK daily = " + weather_OK);
         weatherF_Date = Unix_To_TimeDMMM(root["list"][1]["dt"]);
         weatherF_TemMorn = root["list"][1]["temp"]["morn"];
         weatherF_Humi = root["list"][1]["humidity"];
@@ -722,7 +725,7 @@ void StartDisplay()
   char *str = (char *)"zone_weather";
   P.displayZoneText(ZONE_WEATHER, str, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_NO_EFFECT);
 
-  P.setIntensity(2);
+  P.setIntensity(0);
   P.displayAnimate();
 }
 
@@ -772,7 +775,6 @@ void StartSetup()
   delay(1);
   yield();
   myUpdateTimer();
-  myUpdateTimer();
   yield();
   Brightnes();
 }
@@ -793,5 +795,61 @@ void SystemLoop()
 
 /*------END-----------------------------------------------------------*/
 
+/*--------------------------------------------------------------------*/
+/*----------------- utf8rus ------------------------------------------*/
+/*--------------------------------------------------------------------*/
+String utf8rus(String source)
+{
+  int i, k;
+  String target;
+  unsigned char n;
+  char m[2] = {'0', '\0'};
+
+  k = source.length();
+  i = 0;
+
+  while (i < k)
+  {
+    n = source[i];
+    i++;
+
+    if (n >= 0xC0)
+    {
+      switch (n)
+      {
+      case 0xD0:
+      {
+        n = source[i];
+        i++;
+        if (n == 0x81)
+        {
+          n = 0xA8;
+          break;
+        }
+        if (n >= 0x90 && n <= 0xBF)
+          n = n + 0x30;
+        break;
+      }
+      case 0xD1:
+      {
+        n = source[i];
+        i++;
+        if (n == 0x91)
+        {
+          n = 0xB8;
+          break;
+        }
+        if (n >= 0x80 && n <= 0x8F)
+          n = n + 0x70;
+        break;
+      }
+      }
+    }
+    m[0] = n;
+    target = target + String(m);
+  }
+  return target;
+}
+/*------END-----------------------------------------------------------*/
 
 //***********************************************************************************************************
