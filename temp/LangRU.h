@@ -1,10 +1,4 @@
-﻿/*
- * Русская локализация mod by v22 
- * 
- */
 
-//  локализация основного кода
- 
 String L_today = "Сегодня";
 String L_outdoor = "На улице";
 String L_Humidity = "Влажность";
@@ -43,8 +37,6 @@ String L_WD_Saturday = "Суббота";
 String L_WD_Sunday = "Воскресенье";
 String L_No_conn = "Отсутствует подключение к WIFI. Подключитесь к WiFi-Clock-v4 и наберите в браузере 192.168.4.1";
 String L_YoursIP = "Ваш IP:";
-// Отсутствует перевод на сайте с состоянием погоды (Ваш вариант) 
+// Отсутствует перевод на сайте с состоянием погоды (Ваш вариант)
 String L_weatherDescription_shower_sleet = "снег с дождем";
 String L_weatherDescription_light_shower_snow = "небольшой снегопад";
-
-//  локализация HTMLок

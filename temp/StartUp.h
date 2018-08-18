@@ -63,6 +63,9 @@ const char *auth = SEC_BLYNK_AUTH_WORK;
 WidgetTerminal terminal(V120);
 BlynkTimer InfoTimer;
 BlynkTimer UpdateTimer;
+
+WiFiClient client;
+
 /*------END-----------------------------------------------------------*/
 
 /*--------------------------------------------------------------------*/
@@ -98,6 +101,8 @@ ESP8266HTTPUpdateServer httpUpdater;
 /*----- Const and variable weather -----------------------------------*/
 /*--------------------------------------------------------------------*/
 const char *weatherHost = "api.openweathermap.org";
+const char *weatherHostz = "api.openweathermap.org";
+
 String weatherKey = SEC_KEY_WEATHER;
 String weatherLang = "&lang=ru";
 String weatherMetric = "&units=metric";
@@ -179,7 +184,8 @@ uint8_t degW2[] = {7, 96, 16, 12, 0, 124, 68, 68};
 void WiFi_StartConnect()
 {
   WiFi.mode(WIFI_AP_STA);
-  Blynk.begin(auth, ssid, pass, blynk_ad, 8080);
+  //Blynk.begin(auth, ssid, pass, blynk_ad, 8080);
+  WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -485,114 +491,353 @@ void Info_To_Weather()
 
 void getWeatherData()
 {
+  return;
   HTTPClient http;
   String payload = "";
+  //Serial.println(">>>>>>>>>>>>>>>>>>>>> getWeatherData() <<<<<<<<<<<<<<<<<<<<<<<<");
+  //http.begin(F("https://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
+  //http.begin(F("http://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"));
+  //int httpCode = http.GET();
+  //Serial.println(">>http.errorToString(httpCode) = " + http.errorToString(httpCode));
+  //http.end();
+  //Serial.println(">>>88888888888888888 httpCode weather ");
+  http.begin(F("https://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
+  
+  int httpCode = http.GET();
+  //Serial.println(">>http.errorToString(httpCode) = " + http.errorToString(httpCode));
 
+  weather_OK = false;
+  //Serial.println(">>>>>>>>>>>>>>>>>>>>> httpCode weather = " + httpCode);
+
+  if (httpCode > 0)
   {
-    //http.begin(F("https://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
-    http.begin(F("http://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"));
-    int httpCode = http.GET();
-    weather_OK = false;
-
-    if (httpCode > 0)
+    if (httpCode == HTTP_CODE_OK)
     {
-      if (httpCode == HTTP_CODE_OK)
+      payload = http.getString();
+      DynamicJsonBuffer jsonBuf;
+      JsonObject &root = jsonBuf.parseObject(payload);
+      if (!root.success())
       {
-        payload = http.getString();
-        DynamicJsonBuffer jsonBuf;
-        JsonObject &root = jsonBuf.parseObject(payload);
-        if (!root.success())
-        {
-          Serial.println("!root.success() = FALSE !!!!");
-          return;
-        }
-        weather_OK = true;
-        Serial.println("weather_OK weather = " + weather_OK);
+        Serial.println("!root.success() = FALSE !!!!");
+        return;
+      }
+      weather_OK = true;
+      Serial.println("weather_OK weather = " + weather_OK);
 
-        weather_DescripEn = root["weather"][0]["main"].as<String>();
-        weather_ID = root["weather"][0]["id"];
-        weather_DescripRu = root["weather"][0]["description"].as<String>();
-        weather_DescripRu.toLowerCase();
-        Serial.println("root['weather'][0]['main'] = " + weather_DescripEn);
+      weather_DescripEn = root["weather"][0]["main"].as<String>();
+      weather_ID = root["weather"][0]["id"];
+      weather_DescripRu = root["weather"][0]["description"].as<String>();
+      weather_DescripRu.toLowerCase();
+      Serial.println("root['weather'][0]['main'] = " + weather_DescripEn);
 
-        weather_Sity = root["name"].as<String>();
-        weather_Country = root["sys"]["country"].as<String>();
+      weather_Sity = root["name"].as<String>();
+      weather_Country = root["sys"]["country"].as<String>();
 
-        weather_Temp = root["main"]["temp"];
-        weather_Humi = root["main"]["humidity"];
-        weather_Pres = root["main"]["pressure"];
-        weather_Pres = weather_Pres * 0.75006375541921;
+      weather_Temp = root["main"]["temp"];
+      weather_Humi = root["main"]["humidity"];
+      weather_Pres = root["main"]["pressure"];
+      weather_Pres = weather_Pres * 0.75006375541921;
 
-        weather_Visib = root["visibility"];
-        weather_Visib = weather_Visib / 1000;
+      weather_Visib = root["visibility"];
+      weather_Visib = weather_Visib / 1000;
 
-        weather_TempMin = root["main"]["temp_min"];
-        weather_TempMax = root["main"]["temp_max"];
+      weather_TempMin = root["main"]["temp_min"];
+      weather_TempMax = root["main"]["temp_max"];
 
-        weather_WindSpeed = root["wind"]["speed"];
-        weather_Cloud = root["clouds"]["all"];
+      weather_WindSpeed = root["wind"]["speed"];
+      weather_Cloud = root["clouds"]["all"];
 
-        unsigned long temp_U_T = root["sys"]["sunrise"];
-        weather_Sunrise = Unix_To_TimeHM(temp_U_T);
+      unsigned long temp_U_T = root["sys"]["sunrise"];
+      weather_Sunrise = Unix_To_TimeHM(temp_U_T);
 
-        temp_U_T = root["sys"]["sunset"];
-        weather_Sunset = Unix_To_TimeHM(temp_U_T);
+      temp_U_T = root["sys"]["sunset"];
+      weather_Sunset = Unix_To_TimeHM(temp_U_T);
 
-        temp_U_T = root["dt"];
-        weather_UpdateWeather = Unix_To_TimeHM(temp_U_T);
+      temp_U_T = root["dt"];
+      weather_UpdateWeather = Unix_To_TimeHM(temp_U_T);
 
-        if (weather_DescripRu == "")
-        {
-          weather_Text = "Error connect";
-        }
-        else
-        {
-          weather_Text = weather_DescripRu;
-          if (weather_WindSpeed > 8)
-            weather_Text += ", ветер " + String(weather_WindSpeed, 0) + " м/с";
-        }
+      if (weather_DescripRu == "")
+      {
+        weather_Text = "Error connect";
+      }
+      else
+      {
+        weather_Text = weather_DescripRu;
+        if (weather_WindSpeed > 8)
+          weather_Text += ", ветер " + String(weather_WindSpeed, 0) + " м/с";
       }
     }
-
-    //http.begin(F("https://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
-    http.begin(F("http://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"));
-    httpCode = http.GET();
-
-    if (httpCode > 0)
-    {
-      if (httpCode == HTTP_CODE_OK)
-      {
-        payload = http.getString();
-        DynamicJsonBuffer jsonBuf;
-        JsonObject &root = jsonBuf.parseObject(payload);
-        if (!root.success())
-        {
-          Serial.println("!root.success() = FALSE !!!!");
-          return;
-        }
-        weather_OK = true;
-        Serial.println("weather_OK daily = " + weather_OK);
-        weatherF_Date = Unix_To_TimeDMMM(root["list"][1]["dt"]);
-        weatherF_TemMorn = root["list"][1]["temp"]["morn"];
-        weatherF_Humi = root["list"][1]["humidity"];
-        weatherF_Press = root["list"][1]["pressure"];
-        weatherF_Press = weatherF_Press * 0.75006375541921;
-        if (weather_Pres > weatherF_Press)
-          weatherF_PressDesc = "падает";
-        if (weather_Pres < weatherF_Press)
-          weatherF_PressDesc = "растет";
-        if (weather_Pres == weatherF_Press)
-          weatherF_PressDesc = "стабильно";
-        weatherF_Speed = root["list"][1]["speed"];
-        weatherF_Descrip = root["list"][1]["weather"][0]["description"].as<String>();
-        Serial.println("root[weatherF_Descrip] = " + weatherF_Descrip);
-      }
-    }
-    //LogToTerminaK(F("Free mem http.end Weather = "), String(ESP.getFreeHeap()));
-    http.end();
   }
+
+  //http.begin(F("https://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
+  http.begin(F("http://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"));
+  httpCode = http.GET();
+
+  if (httpCode > 0)
+  {
+    if (httpCode == HTTP_CODE_OK)
+    {
+      payload = http.getString();
+      DynamicJsonBuffer jsonBuf;
+      JsonObject &root = jsonBuf.parseObject(payload);
+      if (!root.success())
+      {
+        Serial.println("!root.success() = FALSE !!!!");
+        return;
+      }
+      weather_OK = true;
+      Serial.println("weather_OK daily = " + weather_OK);
+      weatherF_Date = Unix_To_TimeDMMM(root["list"][1]["dt"]);
+      weatherF_TemMorn = root["list"][1]["temp"]["morn"];
+      weatherF_Humi = root["list"][1]["humidity"];
+      weatherF_Press = root["list"][1]["pressure"];
+      weatherF_Press = weatherF_Press * 0.75006375541921;
+      if (weather_Pres > weatherF_Press)
+        weatherF_PressDesc = "падает";
+      if (weather_Pres < weatherF_Press)
+        weatherF_PressDesc = "растет";
+      if (weather_Pres == weatherF_Press)
+        weatherF_PressDesc = "стабильно";
+      weatherF_Speed = root["list"][1]["speed"];
+      weatherF_Descrip = root["list"][1]["weather"][0]["description"].as<String>();
+      Serial.println("root[weatherF_Descrip] = " + weatherF_Descrip);
+    }
+  }
+  //LogToTerminaK(F("Free mem http.end Weather = "), String(ESP.getFreeHeap()));
+  http.end();
 }
 /*------END-----------------------------------------------------------*/
+
+// =======================================================================
+// Берем погоду с сайта openweathermap.org
+// =======================================================================
+
+
+
+
+String lang = "ru";
+
+String weatherMain = "";
+String weatherDescription = "";
+String weatherLocation = "";
+String country;
+int humidity;
+int pressure;
+float pressureFIX;
+float temp;
+String tempz;
+float lon;
+float lat;
+
+int clouds;
+float windSpeed;
+int windDeg;
+
+String date;
+String date1;
+String currencyRates;
+String weatherString;
+String weatherString1;
+String weatherStringz;
+String weatherStringz1;
+String weatherStringz2;
+
+
+// =======================================================================
+void tvoday(String line)
+{
+  String s;
+  int strt = line.indexOf('}');
+  for (int i = 1; i <= 4; i++)
+  {
+    strt = line.indexOf('}', strt + 1);
+  }
+  s = line.substring(2 + strt, line.length());
+  tempz = s;
+}
+
+void getWeatherDataNN()
+{
+  Serial.print("connecting to ");
+  Serial.println(weatherHost);
+  Serial.println(String("GET /data/2.5/weather?id=") + cityID + "&units=metric&appid=" + weatherKey + "&lang=" + lang + "\r\n" +
+                 "Host: " + weatherHost + "\r\nUser-Agent: ArduinoWiFi/1.1\r\n" +
+                 "Connection: close\r\n\r\n");
+
+  if (client.connect(weatherHost, 80))
+  {
+    client.println(String("GET /data/2.5/weather?id=") + cityID + "&units=metric&appid=" + weatherKey + "&lang=" + lang + "\r\n" +
+                   "Host: " + weatherHost + "\r\nUser-Agent: ArduinoWiFi/1.1\r\n" +
+                   "Connection: close\r\n\r\n");
+  }
+  else
+  {
+    Serial.println("connection failed");
+    return;
+  }
+  String line;
+  int repeatCounter = 0;
+  while (!client.available() && repeatCounter < 10)
+  {
+    delay(500);
+    Serial.println("w.");
+    repeatCounter++;
+  }
+  while (client.connected() && client.available())
+  {
+    char c = client.read();
+    if (c == '[' || c == ']')
+      c = ' ';
+    line += c;
+  }
+
+  client.stop();
+  Serial.println(line + "\n");
+  DynamicJsonBuffer jsonBuf;
+  JsonObject &root = jsonBuf.parseObject(line);
+  if (!root.success())
+  {
+    Serial.println("parseObject() failed");
+    return;
+  }
+  weatherMain = root["weather"]["main"].as<String>();
+  weatherDescription = root["weather"]["description"].as<String>();
+  weatherDescription.toLowerCase();
+  weatherLocation = root["name"].as<String>();
+  country = root["sys"]["country"].as<String>();
+  temp = root["main"]["temp"];
+  humidity = root["main"]["humidity"];
+  pressure = root["main"]["pressure"];
+  pressureFIX = (pressure / 1.3332239) - 24;
+  windSpeed = root["wind"]["speed"];
+  windDeg = root["wind"]["deg"];
+  clouds = root["clouds"]["all"];
+  String deg = String(char('~' + 25));
+
+  if (weatherDescription == "shower sleet")
+    weatherDescription = L_weatherDescription_shower_sleet;
+  if (weatherDescription == "light shower snow")
+    weatherDescription = L_weatherDescription_light_shower_snow;
+
+  weatherString = L_outdoor + " " + String(temp, 0) + "\xB0" + "C ";
+  weatherString += weatherDescription;
+  weatherString += " " + L_Humidity + " " + String(humidity) + "% ";
+  weatherString += L_Atmospheric + " " + String(pressureFIX, 0) + " " + L_Atmospheric_mm + " ";
+  weatherString += L_Cloudiness + " " + String(clouds) + "% ";
+
+  String windDegString;
+
+  if (windDeg >= 345 || windDeg <= 22)
+    windDegString = L_Wind_Northern;
+  if (windDeg >= 23 && windDeg <= 68)
+    windDegString = L_Wind_Northeastern;
+  if (windDeg >= 69 && windDeg <= 114)
+    windDegString = L_Wind_East;
+  if (windDeg >= 115 && windDeg <= 160)
+    windDegString = L_Wind_Southeastern;
+  if (windDeg >= 161 && windDeg <= 206)
+    windDegString = L_Wind_Southern;
+  if (windDeg >= 207 && windDeg <= 252)
+    windDegString = L_Wind_Southwestern;
+  if (windDeg >= 253 && windDeg <= 298)
+    windDegString = L_Wind_West;
+  if (windDeg >= 299 && windDeg <= 344)
+    windDegString = L_Wind_Northwestern;
+
+  weatherString += L_Wind + " " + windDegString + " " + String(windSpeed, 1) + " " + L_Windspeed;
+
+  Serial.println("POGODA: " + String(temp, 0) + "\n");
+}
+
+
+// =======================================================================
+// Берем ПРОГНОЗ!!! погоды с сайта openweathermap.org
+// =======================================================================
+
+
+void getWeatherDataNNz()
+{
+  Serial.print("connecting to ");
+  Serial.println(weatherHostz);
+  Serial.println(String("GET /data/2.5/forecast/daily?id=") + cityID + "&units=metric&appid=" + weatherKey + "&lang=" + lang + "&cnt=2" + "\r\n" +
+                 "Host: " + weatherHostz + "\r\nUser-Agent: ArduinoWiFi/1.1\r\n" +
+                 "Connection: close\r\n\r\n");
+
+  if (client.connect(weatherHostz, 80))
+  {
+    client.println(String("GET /data/2.5/forecast/daily?id=") + cityID + "&units=metric&appid=" + weatherKey + "&lang=" + lang + "&cnt=2" + "\r\n" +
+                   "Host: " + weatherHostz + "\r\nUser-Agent: ArduinoWiFi/1.1\r\n" +
+                   "Connection: close\r\n\r\n");
+  }
+  else
+  {
+    Serial.println("connection failed");
+    return;
+  }
+  String line;
+  int repeatCounter = 0;
+  while (!client.available() && repeatCounter < 10)
+  {
+    delay(500);
+    Serial.println("w.");
+    repeatCounter++;
+  }
+  while (client.connected() && client.available())
+  {
+    char c = client.read();
+    if (c == '[' || c == ']')
+      c = ' ';
+    line += c;
+  }
+  Serial.println("line: " + line + "\n");
+  tvoday(line);
+  Serial.println(tempz + "\n");
+
+  client.stop();
+
+  DynamicJsonBuffer jsonBuf;
+  JsonObject &root = jsonBuf.parseObject(tempz);
+  if (!root.success())
+  {
+    Serial.println("parseObject() failed");
+    return;
+  }
+  lon = root["coord"]["lon"];
+  lat = root["coord"]["lat"];
+
+  float wSpeed = root["speed"];
+  int wDeg = root["deg"];
+  float tempMin = root["temp"]["min"];
+  float tempMax = root["temp"]["max"];
+  weatherDescription = root["weather"]["description"].as<String>();
+
+  weatherStringz = "Завтра температура " + String(tempMin, 0) + "_" + String(tempMax, 0) + "\xB0" + "C  " + weatherDescription;
+  Serial.println("!!!!!PROGNOZ: " + weatherStringz + " Wind: " + wSpeed + " WindDeg: " + (wDeg) + "\n");
+
+  String windDegString;
+
+  if (wDeg >= 345 || wDeg <= 22)
+    windDegString = L_Wind_Northern;
+  if (wDeg >= 23 && wDeg <= 68)
+    windDegString = L_Wind_Northeastern;
+  if (wDeg >= 69 && wDeg <= 114)
+    windDegString = L_Wind_East;
+  if (wDeg >= 115 && wDeg <= 160)
+    windDegString = L_Wind_Southeastern;
+  if (wDeg >= 161 && wDeg <= 206)
+    windDegString = L_Wind_Southern;
+  if (wDeg >= 207 && wDeg <= 252)
+    windDegString = L_Wind_Southwestern;
+  if (wDeg >= 253 && wDeg <= 298)
+    windDegString = L_Wind_West;
+  if (wDeg >= 299 && wDeg <= 344)
+    windDegString = L_Wind_Northwestern;
+
+  weatherStringz1 = L_Wind + " " + windDegString + " " + String(wSpeed, 1) + " " + L_Windspeed;
+}
+
+
+// =======================================================================
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /*-----------------------==================--------------------------------------------------------------------------*/
@@ -615,6 +860,7 @@ void restartMCU()
   yield();
 }
 
+/*
 BLYNK_WRITE(V117)
 {
   int pinValue = param.asInt();
@@ -661,6 +907,7 @@ BLYNK_WRITE(V110)
     LogToTerminaK(F("Free mem end Weather = "), String(ESP.getFreeHeap()));
   }
 }
+*/
 
 /*------END-----------------------------------------------------------*/
 
@@ -822,7 +1069,7 @@ void StartSetup()
 /*--------------------------------------------------------------------*/
 void SystemLoop()
 {
-  Blynk.run();
+  //Blynk.run();
   httpServer.handleClient();
   InfoTimer.run();
   UpdateTimer.run();
