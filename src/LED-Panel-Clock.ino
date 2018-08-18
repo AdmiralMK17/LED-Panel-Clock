@@ -117,7 +117,7 @@ void loop()
       cycle++;
       break;
     case 3:
-      ForInfo = "Влажн:" + String(weather_Humi) + " %";
+      ForInfo = "Влажность: " + String(weather_Humi) + " %";
       utf8rus(ForInfo).toCharArray(buf, 256);
       P.displayZoneText(ZONE_WEATHER, buf, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_DOWN);
       cycle++;
@@ -142,6 +142,7 @@ void loop()
       break;
     case 7:
       ForInfo = "Ожид: " + weatherF_Descrip;
+      utf8rus(ForInfo).toCharArray(buf, 256);
       P.displayZoneText(ZONE_WEATHER, buf, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_DOWN);
       cycle++;
       break;
@@ -153,6 +154,7 @@ void loop()
       break;
     case 9:
       ForInfo = "Давление " + weatherF_PressDesc;
+      utf8rus(ForInfo).toCharArray(buf, 256);
       P.displayZoneText(ZONE_WEATHER, buf, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_DOWN);
       cycle++;
       break;

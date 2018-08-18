@@ -1,6 +1,7 @@
 #define HOMELOAD 1
 #define REALSERVERNTP 0
 #include "Password.h"
+#include "LangRU.h"
 
 /*--------------------------------------------------------------------*/
 /*----- WiFi and Blynk define ----------------------------------------*/
@@ -413,7 +414,34 @@ String Unix_To_TimeDMMM(unsigned long unix_time)
   tmElements_t tmq;
   breakTime((unix_time + timeZone * SECS_PER_HOUR), tmq);
   String ForTime;
-  ForTime = String(tmq.Day) + " " + String(monthStr(tmq.Month));
+  String mntrus;
+
+  if (tmq.Month == 1)
+    mntrus = L_mon_January;
+  if (tmq.Month == 2)
+    mntrus = L_mon_February;
+  if (tmq.Month == 3)
+    mntrus = L_mon_March;
+  if (tmq.Month == 4)
+    mntrus = L_mon_April;
+  if (tmq.Month == 5)
+    mntrus = L_mon_May;
+  if (tmq.Month == 6)
+    mntrus = L_mon_June;
+  if (tmq.Month == 7)
+    mntrus = L_mon_July;
+  if (tmq.Month == 8)
+    mntrus = L_mon_August;
+  if (tmq.Month == 9)
+    mntrus = L_mon_September;
+  if (tmq.Month == 10)
+    mntrus = L_mon_October;
+  if (tmq.Month == 11)
+    mntrus = L_mon_November;
+  if (tmq.Month == 12)
+    mntrus = L_mon_December;
+
+  ForTime = String(tmq.Day) + " " + mntrus;
   return ForTime;
 }
 /*
@@ -461,7 +489,8 @@ void getWeatherData()
   String payload = "";
 
   {
-    http.begin(F("https://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"), "50:31:6E:AE:91:47:1F:F0:79:FF:EC:13:C5:6F:4A:09:56:5D:5F:5E");
+    //http.begin(F("https://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
+    http.begin(F("http://api.openweathermap.org/data/2.5/weather?&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&id=479561&lang=ru"));
     int httpCode = http.GET();
     weather_OK = false;
 
@@ -473,7 +502,10 @@ void getWeatherData()
         DynamicJsonBuffer jsonBuf;
         JsonObject &root = jsonBuf.parseObject(payload);
         if (!root.success())
+        {
+          Serial.println("!root.success() = FALSE !!!!");
           return;
+        }
         weather_OK = true;
         Serial.println("weather_OK weather = " + weather_OK);
 
@@ -522,7 +554,8 @@ void getWeatherData()
       }
     }
 
-    http.begin(F("https://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"), "50:31:6E:AE:91:47:1F:F0:79:FF:EC:13:C5:6F:4A:09:56:5D:5F:5E");
+    //http.begin(F("https://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"), "6C:9D:1E:27:F1:13:7B:C7:B6:15:90:13:F2:D0:29:97:A4:5B:3F:7E");
+    http.begin(F("http://api.openweathermap.org/data/2.5/forecast/daily?id=479561&units=metric&appid=02a442964e22b48fe1b1c4b2d1da9454&lang=ru&cnt=2"));
     httpCode = http.GET();
 
     if (httpCode > 0)
@@ -533,7 +566,10 @@ void getWeatherData()
         DynamicJsonBuffer jsonBuf;
         JsonObject &root = jsonBuf.parseObject(payload);
         if (!root.success())
+        {
+          Serial.println("!root.success() = FALSE !!!!");
           return;
+        }
         weather_OK = true;
         Serial.println("weather_OK daily = " + weather_OK);
         weatherF_Date = Unix_To_TimeDMMM(root["list"][1]["dt"]);
@@ -549,6 +585,7 @@ void getWeatherData()
           weatherF_PressDesc = "стабильно";
         weatherF_Speed = root["list"][1]["speed"];
         weatherF_Descrip = root["list"][1]["weather"][0]["description"].as<String>();
+        Serial.println("root[weatherF_Descrip] = " + weatherF_Descrip);
       }
     }
     //LogToTerminaK(F("Free mem http.end Weather = "), String(ESP.getFreeHeap()));
@@ -723,7 +760,7 @@ void StartDisplay()
   P.displayZoneText(ZONE_DATES, szData, PA_CENTER, SCROLL_SPEED, 2000, PA_PRINT, PA_NO_EFFECT);
 
   char *str = (char *)"zone_weather";
-  P.displayZoneText(ZONE_WEATHER, str, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_NO_EFFECT);
+  P.displayZoneText(ZONE_WEATHER, str, PA_CENTER, SCROLL_SPEED, TEXT_PAUSE_TIME, PA_SCROLL_LEFT, PA_DISSOLVE);
 
   P.setIntensity(0);
   P.displayAnimate();
